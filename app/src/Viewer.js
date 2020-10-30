@@ -1,7 +1,7 @@
 import React from 'react';
 import DataSlice from './DataSlice.js';
-import { Transform3d } from 'react-css-transform';
 import YAML from 'yamljs';
+import _ from 'lodash';
 
 export class Viewer extends React.Component {
   constructor(props) {
@@ -64,7 +64,6 @@ known issues:
     } catch(e) {
       exception = e;
     }
-    console.log(exception);
     if (new_doc === null || typeof new_doc !== "object" || exception) {
       new_doc = {
         "error": "Oh no! That didn't work for some reason.",
@@ -83,7 +82,7 @@ known issues:
   }
 
   componentDidMount() {
-    window.addEventListener("wheel", this.moveCamera);
+    window.addEventListener("wheel", _.throttle(this.moveCamera, 200));
   }
 
   render() {

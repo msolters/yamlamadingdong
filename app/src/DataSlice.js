@@ -1,7 +1,6 @@
 import { synthwave84 } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import React from 'react';
-import { Transform3d } from 'react-css-transform';
 import YAML from 'yamljs';
 
 export class DataSlice extends React.Component {

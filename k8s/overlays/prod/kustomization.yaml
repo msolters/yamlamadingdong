@@ -13,7 +13,7 @@ patchesStrategicMerge:
       spec:
         containers:
           - name: yamlamadingdong
-            imagePullPolicy: IfNotPresent
+            imagePullPolicy: Always
           - name: auto-ssl
             imagePullPolicy: IfNotPresent
 
