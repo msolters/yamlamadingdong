@@ -24,10 +24,6 @@ spec:
       - name: yamlamadingdong
         image: yamlamadingdong
         imagePullPolicy: Always
-        ports:
-        - name: "app"
-          containerPort: 8000
-          protocol: TCP
       - name: nginx
         image: auto-ssl
         imagePullPolicy: Always

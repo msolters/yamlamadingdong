@@ -14,10 +14,12 @@ export class Viewer extends React.Component {
 
     const example_yaml = `
 ---
-name: YAMLAMADINGDONG v420
-author: Saltine
-about: Copy paste a YAML file into the browser :)
-controls: Scroll and click
+software:
+  author: Saltine
+  about: Copy paste a YAML file into the browser :)
+  controls: Scroll and click
+  name: YAMLAMADINGDONG v420
+  repo: https://github.com/msolters/yamlamadingdong
 known issues:
 - Can crash with sufficiently pathological input.`;
 
