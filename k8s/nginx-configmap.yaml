@@ -39,7 +39,7 @@ data:
         -- and register new certificates for. Defaults to not allowing any domains,
         -- so this must be configured.
         auto_ssl:set("allow_domain", function(domain, auto_ssl, ssl_options)
-          return ngx.re.match(domain, "^((www.)?marksolters.com)$", "i")
+          return ngx.re.match(domain, "^(yamlamadingdong.marksolters.com)$", "i")
         end)
 
         auto_ssl:set("storage_adapter", "resty.auto-ssl.storage_adapters.redis")
