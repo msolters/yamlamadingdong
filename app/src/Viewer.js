@@ -1,6 +1,6 @@
 import React from 'react';
 import DataSlice from './DataSlice.js';
-import YAML from 'yamljs';
+import yaml from 'js-yaml';
 import _ from 'lodash';
 
 export class Viewer extends React.Component {
@@ -12,6 +12,7 @@ export class Viewer extends React.Component {
     this.onPaste = this.onPaste.bind(this);
     this.setPositionToIndex = this.setPositionToIndex.bind(this);
 
+
     const example_yaml = `
 ---
 software:
@@ -20,11 +21,10 @@ software:
   about: Copy paste a YAML file into the browser :)
   controls: Scroll and click
   repo: https://github.com/msolters/yamlamadingdong
-  known issues:
-  - Can crash with sufficiently pathological input.
 getting started:
 - COPY the provided yaml file
-- Paste!
+- Or any YAML file
+- Paste it here!
 yaml:
   kind: Deployment
   apiVersion: apps/v1
@@ -127,7 +127,7 @@ yaml:
 `;
 
     this.state = {
-      doc: YAML.parse(example_yaml),
+      doc: yaml.safeLoad(example_yaml),
       z_offset: window.innerWidth/4
     };
 
@@ -161,23 +161,41 @@ yaml:
     });
   }
 
+
   onPaste(e) {
-    let new_doc = undefined
-    let exception = false
+    this.setState({
+      doc: {
+        "loading": "Parsing..."
+      },
+      z_offset: window.innerWidth
+    });
+    let new_doc = undefined;
+    let exception = false;
+    let multi_doc = false
+    const input_text = e.clipboardData.getData('Text');
     try {
-      new_doc = YAML.parse(e.clipboardData.getData('Text'));
+      new_doc = yaml.safeLoad(input_text);
     } catch(e) {
+      if (e.message === "expected a single document in the stream, but found more") {
+        multi_doc = true;
+      }
       exception = e;
+    }
+    if (multi_doc) {
+      try {
+        new_doc = yaml.safeLoadAll(input_text);
+        exception = false
+      } catch(e) {
+        exception = e;
+      }
     }
     if (new_doc === null || typeof new_doc !== "object" || exception) {
       new_doc = {
         "error": "Oh no! That didn't work for some reason.",
-        "hints": [
-          "This tool is designed for single YAML objects."
-        ]
-      }
-      if (exception) {
-        new_doc.exception = exception
+      };
+      if (exception !== false) {
+        console.log(exception);
+        new_doc.exception = exception;
       }
     }
     this.setState({

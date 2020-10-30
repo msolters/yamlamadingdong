@@ -1,7 +1,7 @@
 import { synthwave84 } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import React from 'react';
-import YAML from 'yamljs';
+import yaml from 'js-yaml';
 
 export class DataSlice extends React.Component {
   constructor(props) {
@@ -16,7 +16,7 @@ export class DataSlice extends React.Component {
 
   handleCopy(e) {
     e.stopPropagation();
-    const yaml_to_copy = YAML.stringify(this.props.sub_doc, 9999, 2);
+    const yaml_to_copy = yaml.safeDump(this.props.sub_doc);
     console.log(yaml_to_copy);
     navigator.clipboard.writeText(yaml_to_copy);
   }
@@ -49,7 +49,7 @@ export class DataSlice extends React.Component {
         </div>
         <div className="data-plane-value">
           <SyntaxHighlighter language="yaml" style={synthwave84} >
-            {YAML.stringify(this.props.sub_doc, 9999, 2)}
+            {yaml.safeDump(this.props.sub_doc)}
           </SyntaxHighlighter>
         </div>
       </div>
