@@ -222,7 +222,7 @@ yaml:
     visible_keys.forEach((k, idx) => {
       const translation = {
         x: window.innerWidth * 0.5,
-        y: window.innerHeight * 0.75 - idx * y_partition,
+        y: window.innerHeight * 0.6 - idx * y_partition,
         z: -(idx+1) * x_partition + this.state.z_offset
       };
       data_slices.push(
