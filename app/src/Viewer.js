@@ -15,13 +15,116 @@ export class Viewer extends React.Component {
     const example_yaml = `
 ---
 software:
+  name: YAMLAMADINGDONG v420
   author: Saltine
   about: Copy paste a YAML file into the browser :)
   controls: Scroll and click
-  name: YAMLAMADINGDONG v420
   repo: https://github.com/msolters/yamlamadingdong
-known issues:
-- Can crash with sufficiently pathological input.`;
+  known issues:
+  - Can crash with sufficiently pathological input.
+getting started:
+- COPY the provided yaml file
+- Paste!
+yaml:
+  kind: Deployment
+  apiVersion: apps/v1
+  metadata:
+    name: yamlamadingdong
+    namespace: default
+    selfLink: /apis/apps/v1/namespaces/default/deployments/yamlamadingdong
+    uid: c190b22c-1a76-11eb-985d-42010a8001c6
+    resourceVersion: '149303278'
+    generation: 8
+    creationTimestamp: '2020-10-30T06:11:32Z'
+    labels:
+      app.kubernetes.io/managed-by: skaffold-v0.35.0
+      role: yamlamadingdong
+      skaffold.dev/builder: google-cloud-build
+      skaffold.dev/cleanup: 'true'
+      skaffold.dev/deployer: kustomize
+      skaffold.dev/tag-policy: envTemplateTagger
+      skaffold.dev/tail: 'true'
+    annotations:
+      deployment.kubernetes.io/revision: '8'
+      kubectl.kubernetes.io/last-applied-configuration: >
+        {"apiVersion":"extensions/v1beta1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"skaffold-v0.35.0","role":"yamlamadingdong","skaffold.dev/builder":"google-cloud-build","skaffold.dev/cleanup":"true","skaffold.dev/deployer":"kustomize","skaffold.dev/tag-policy":"envTemplateTagger","skaffold.dev/tail":"true"},"name":"yamlamadingdong","namespace":"default"},"spec":{"replicas":1,"selector":{"matchLabels":{"role":"yamlamadingdong"}},"strategy":{"rollingUpdate":{"maxSurge":2,"maxUnavailable":1},"type":"RollingUpdate"},"template":{"metadata":{"labels":{"app.kubernetes.io/managed-by":"skaffold-v0.35.0","role":"yamlamadingdong","skaffold.dev/builder":"google-cloud-build","skaffold.dev/cleanup":"true","skaffold.dev/deployer":"kustomize","skaffold.dev/tag-policy":"envTemplateTagger","skaffold.dev/tail":"true"}},"spec":{"containers":[{"image":"gcr.io/kube-sandbox-181504/yamlamadingdong:118c447","imagePullPolicy":"Always","name":"yamlamadingdong"},{"image":"gcr.io/kube-sandbox-181504/auto-ssl:master","imagePullPolicy":"Always","name":"nginx","ports":[{"containerPort":80,"name":"http","protocol":"TCP"},{"containerPort":443,"name":"https","protocol":"TCP"}],"resources":{"limits":{"cpu":"250m","memory":"275Mi"},"requests":{"cpu":"100m","memory":"90Mi"}},"volumeMounts":[{"mountPath":"/usr/local/openresty/nginx/conf","name":"nginx-config"}]}],"volumes":[{"configMap":{"name":"yamlamadingdong-nginx"},"name":"nginx-config"}]}}}}
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        role: yamlamadingdong
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app.kubernetes.io/managed-by: skaffold-v0.35.0
+          role: yamlamadingdong
+          skaffold.dev/builder: google-cloud-build
+          skaffold.dev/cleanup: 'true'
+          skaffold.dev/deployer: kustomize
+          skaffold.dev/tag-policy: envTemplateTagger
+          skaffold.dev/tail: 'true'
+      spec:
+        volumes:
+          - name: nginx-config
+            configMap:
+              name: yamlamadingdong-nginx
+              defaultMode: 420
+        containers:
+          - name: yamlamadingdong
+            image: 'gcr.io/kube-sandbox-181504/yamlamadingdong:118c447'
+            resources: {}
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+            imagePullPolicy: Always
+          - name: nginx
+            image: 'gcr.io/kube-sandbox-181504/auto-ssl:master'
+            ports:
+              - name: http
+                containerPort: 80
+                protocol: TCP
+              - name: https
+                containerPort: 443
+                protocol: TCP
+            resources:
+              limits:
+                cpu: 250m
+                memory: 275Mi
+              requests:
+                cpu: 100m
+                memory: 90Mi
+            volumeMounts:
+              - name: nginx-config
+                mountPath: /usr/local/openresty/nginx/conf
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+            imagePullPolicy: Always
+        restartPolicy: Always
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: ClusterFirst
+        securityContext: {}
+        schedulerName: default-scheduler
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+        maxSurge: 2
+    revisionHistoryLimit: 2147483647
+    progressDeadlineSeconds: 2147483647
+  status:
+    observedGeneration: 8
+    replicas: 1
+    updatedReplicas: 1
+    readyReplicas: 1
+    availableReplicas: 1
+    conditions:
+      - type: Available
+        status: 'True'
+        lastUpdateTime: '2020-10-30T06:11:32Z'
+        lastTransitionTime: '2020-10-30T06:11:32Z'
+        reason: MinimumReplicasAvailable
+        message: Deployment has minimum availability.
+`;
 
     this.state = {
       doc: YAML.parse(example_yaml),
@@ -122,7 +225,7 @@ known issues:
       <div className="viewer" onPaste={(e) => this.onPaste(e)}>
         <div className="navbar">
           <div className="nav-node" onClick={() => this.setPositionToIndex(0)}>
-            >
+            Keys >
           </div>
           {position_nodes}
         </div>

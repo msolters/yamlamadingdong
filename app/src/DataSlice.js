@@ -7,10 +7,18 @@ export class DataSlice extends React.Component {
   constructor(props) {
     super(props);
     this.handleSelectSlice = this.handleSelectSlice.bind(this);
+    this.handleCopy = this.handleCopy.bind(this);
   }
 
   handleSelectSlice(k, e) {
     this.props.selectSlice(k);
+  }
+
+  handleCopy(e) {
+    e.stopPropagation();
+    const yaml_to_copy = YAML.stringify(this.props.sub_doc, 9999, 2);
+    console.log(yaml_to_copy);
+    navigator.clipboard.writeText(yaml_to_copy);
   }
 
   render() {
@@ -33,6 +41,9 @@ export class DataSlice extends React.Component {
     };
     return (
       <div className={className} onClick={onClick} style={styles}>
+        <div className="data-plane-copy" onClick={(e) => this.handleCopy(e)}>
+          Copy
+        </div>
         <div className="data-plane-key-name">
           {this.props.sub_doc_key}
         </div>
