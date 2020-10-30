@@ -15,17 +15,17 @@ export class Viewer extends React.Component {
 
     const example_yaml = `
 ---
-software:
+what do?:
+- Paste YAML from your clipboard to anywhere in the browser window
+- Browse parsed structure with mouse
+notes:
+- Desktop only for now!
+about:
   name: YAMLAMADINGDONG v420
   author: Saltine
-  about: Copy paste a YAML file into the browser :)
-  controls: Scroll and click
+  function: Browse artisanal, ethically-sourced YAML or JSON in 3D
   repo: https://github.com/msolters/yamlamadingdong
-getting started:
-- COPY the provided yaml file
-- Or any YAML file
-- Paste it here!
-yaml:
+example yaml:
   kind: Deployment
   apiVersion: apps/v1
   metadata:
