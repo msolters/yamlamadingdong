@@ -1,0 +1,54 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: yamlamadingdong
+  labels:
+    role: yamlamadingdong
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+       maxUnavailable: 1
+       maxSurge: 2
+  selector:
+    matchLabels:
+      role: yamlamadingdong
+  template:
+    metadata:
+      labels:
+        role: yamlamadingdong
+    spec:
+      containers:
+      - name: yamlamadingdong
+        image: yamlamadingdong
+        imagePullPolicy: Always
+        ports:
+        - name: "app"
+          containerPort: 8000
+          protocol: TCP
+      - name: nginx
+        image: auto-ssl
+        imagePullPolicy: Always
+        ports:
+        - name: "http"
+          containerPort: 80
+          protocol: TCP
+        - name: "https"
+          containerPort: 443
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 250m
+            memory: 275Mi
+          requests:
+            cpu: 100m
+            memory: 90Mi
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /usr/local/openresty/nginx/conf
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: yamlamadingdong-nginx

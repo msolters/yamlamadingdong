@@ -1,0 +1,85 @@
+html {
+  background: #222;
+}
+body {
+  overflow: hidden;
+}
+.canvas {
+  transform-style: preserve-3d;
+  perspective: 5000px;
+  background-color: #aaa;
+  width: 100%;
+}
+.scene {
+  transform: rotateY(-45deg) translateY(25%) translateX(-50%);
+  transform-style: preserve-3d;
+  text-align: center;
+  width: 100%;
+}
+
+.navbar {
+  display: flex;
+  left: 0;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  padding: 0 0 0 0;
+}
+.nav-node {
+  color: #eee;
+  height: 100%;
+  padding: 1em;
+  transition: 0.3s;
+}
+.nav-node:hover {
+  cursor: pointer;
+  background-color: #333;
+}
+
+.data-plane {
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  transition: 0.25s;
+  width: 75%;
+}
+.data-plane:hover {
+  top: -4em;
+}
+.data-plane.drillable {
+}
+.data-plane.drillable:hover {
+  cursor: pointer;
+  transform: translateY(200px);
+}
+.data-plane.drillable:hover > .data-plane-key-name {
+  transform: translateX(1em);
+}
+.data-plane:hover > .data-plane-value {
+  opacity: 0.8;
+}
+.data-plane-key-name {
+  color: #ddd;
+  font-size: 3em;
+  position: absolute;
+  top: -1em;
+  z-index: 10;
+  white-space: nowrap;
+}
+.drillable > .data-plane-key-name {
+  color: #fff;
+  font-weight: bold;
+  transition: 1s;
+}
+.data-plane-value {
+  font-weight: normal;
+  font-size: 1.0em;
+  background-color: #555;
+  color: #ccc;
+  padding: 1em;
+  border-radius: 1em;
+}
+.drillable > .data-plane-value {
+  opacity: 0.2;
+}
