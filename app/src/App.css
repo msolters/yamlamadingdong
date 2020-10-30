@@ -11,7 +11,7 @@ body {
   width: 100%;
 }
 .scene {
-  transform: rotateY(-45deg) translateY(25%) translateX(-50%);
+  transform: rotateY(-45deg) translateY(4em) translateX(-50%);
   transform-style: preserve-3d;
   text-align: center;
   width: 100%;
@@ -76,18 +76,25 @@ body {
   opacity: 1;
 }
 .data-plane-key-name {
+  background-color: #222222cf;
+  border-radius: 0.25em;
   color: #ddd;
   font-size: 3em;
+  padding: 0.1em 0.3em;
   position: absolute;
-  top: -1em;
-  z-index: 10;
+  top: -1.25em;
   white-space: nowrap;
+  z-index: 10;
 }
 .drillable > .data-plane-key-name {
   color: #fff;
   transition: 1s;
 }
 .data-plane:hover > .data-plane-key-name {
+  opacity: 0.9;
+}
+.data-plane.drillable:hover > .data-plane-key-name {
+  text-decoration: underline;
 }
 .data-plane-value {
   font-weight: normal;

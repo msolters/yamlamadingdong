@@ -47,7 +47,7 @@ yaml:
     annotations:
       deployment.kubernetes.io/revision: '8'
       kubectl.kubernetes.io/last-applied-configuration: >
-        {"apiVersion":"extensions/v1beta1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"skaffold-v0.35.0","role":"yamlamadingdong","skaffold.dev/builder":"google-cloud-build","skaffold.dev/cleanup":"true","skaffold.dev/deployer":"kustomize","skaffold.dev/tag-policy":"envTemplateTagger","skaffold.dev/tail":"true"},"name":"yamlamadingdong","namespace":"default"},"spec":{"replicas":1,"selector":{"matchLabels":{"role":"yamlamadingdong"}},"strategy":{"rollingUpdate":{"maxSurge":2,"maxUnavailable":1},"type":"RollingUpdate"},"template":{"metadata":{"labels":{"app.kubernetes.io/managed-by":"skaffold-v0.35.0","role":"yamlamadingdong","skaffold.dev/builder":"google-cloud-build","skaffold.dev/cleanup":"true","skaffold.dev/deployer":"kustomize","skaffold.dev/tag-policy":"envTemplateTagger","skaffold.dev/tail":"true"}},"spec":{"containers":[{"image":"gcr.io/kube-sandbox-181504/yamlamadingdong:118c447","imagePullPolicy":"Always","name":"yamlamadingdong"},{"image":"gcr.io/kube-sandbox-181504/auto-ssl:master","imagePullPolicy":"Always","name":"nginx","ports":[{"containerPort":80,"name":"http","protocol":"TCP"},{"containerPort":443,"name":"https","protocol":"TCP"}],"resources":{"limits":{"cpu":"250m","memory":"275Mi"},"requests":{"cpu":"100m","memory":"90Mi"}},"volumeMounts":[{"mountPath":"/usr/local/openresty/nginx/conf","name":"nginx-config"}]}],"volumes":[{"configMap":{"name":"yamlamadingdong-nginx"},"name":"nginx-config"}]}}}}
+        {"apiVersion":"extensions/v1beta1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"skaffold-v0.35.0","role":"yamlamadingdong","skaffold.dev/builder":"google-cloud-build","skaffold.dev/cleanup":"true","skaffold.dev/deployer":"kustomize","skaffold.dev/tag-policy":"envTemplateTagger","skaffold.dev/tail":"true"},"name":"yamlamadingdong","namespace":"default"},"spec":{"replicas":1,"selector":{"matchLabels":{"role":"yamlamadingdong"}},"strategy":{"rollingUpdate":{"maxSurge":2,"maxUnavailable":1},"type":"RollingUpdate"},"template":{"metadata":{"labels":{"app.kubernetes.io/managed-by":"skaffold-v0.35.0","role":"yamlamadingdong","skaffold.dev/builder":"google-cloud-build","skaffold.dev/cleanup":"true","skaffold.dev/deployer":"kustomize","skaffold.dev/tag-policy":"envTemplateTagger","skaffold.dev/tail":"true"}},"spec":{"containers":[{"image":"gcr.io/gcp-project-id/yamlamadingdong:118c447","imagePullPolicy":"Always","name":"yamlamadingdong"},{"image":"gcr.io/gcp-project-id/auto-ssl:master","imagePullPolicy":"Always","name":"nginx","ports":[{"containerPort":80,"name":"http","protocol":"TCP"},{"containerPort":443,"name":"https","protocol":"TCP"}],"resources":{"limits":{"cpu":"250m","memory":"275Mi"},"requests":{"cpu":"100m","memory":"90Mi"}},"volumeMounts":[{"mountPath":"/usr/local/openresty/nginx/conf","name":"nginx-config"}]}],"volumes":[{"configMap":{"name":"yamlamadingdong-nginx"},"name":"nginx-config"}]}}}}
   spec:
     replicas: 1
     selector:
@@ -72,13 +72,13 @@ yaml:
               defaultMode: 420
         containers:
           - name: yamlamadingdong
-            image: 'gcr.io/kube-sandbox-181504/yamlamadingdong:118c447'
+            image: 'gcr.io/gcp-project-id/yamlamadingdong:118c447'
             resources: {}
             terminationMessagePath: /dev/termination-log
             terminationMessagePolicy: File
             imagePullPolicy: Always
           - name: nginx
-            image: 'gcr.io/kube-sandbox-181504/auto-ssl:master'
+            image: 'gcr.io/gcp-project-id/auto-ssl:master'
             ports:
               - name: http
                 containerPort: 80
@@ -155,7 +155,7 @@ yaml:
   }
 
   moveCamera(e) {
-    const delta = e.deltaY;
+    const delta = Math.max(e.deltaY, Math.sign(e.deltaY)*110);
     this.setState({
       z_offset: Math.max( Math.min((this.state.z_offset + delta), window.innerWidth), 0)
     });
@@ -205,7 +205,7 @@ yaml:
   }
 
   componentDidMount() {
-    window.addEventListener("wheel", _.throttle(this.moveCamera, 200));
+    window.addEventListener("wheel", _.throttle(this.moveCamera, 70));
   }
 
   render() {
@@ -218,7 +218,7 @@ yaml:
 
     let data_slices = [];
     const x_partition = window.innerWidth / visible_keys.length;
-    const y_partition = window.innerHeight*.5 / visible_keys.length;
+    const y_partition = window.innerHeight*.4 / visible_keys.length;
     visible_keys.forEach((k, idx) => {
       const translation = {
         x: window.innerWidth * 0.5,
@@ -233,7 +233,7 @@ yaml:
     let position_nodes = []
     this.state.pos.forEach((k, idx) => {
       position_nodes.push(
-        <div className="nav-node" onClick={() => this.setPositionToIndex(idx+1)}>
+        <div key={idx} className="nav-node" onClick={() => this.setPositionToIndex(idx+1)}>
           {k}
         </div>
       );
