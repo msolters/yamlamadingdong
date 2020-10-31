@@ -8,7 +8,9 @@ export class Viewer extends React.Component {
     super(props);
     this.selectSlice = this.selectSlice.bind(this);
     this.handleKeyRemoval = this.handleKeyRemoval.bind(this);
-    this.moveCamera = this.moveCamera.bind(this);
+    this.moveCameraScroll = this.moveCameraScroll.bind(this);
+    this.handleStartTouch = this.handleStartTouch.bind(this);
+    this.moveCameraTouch = this.moveCameraTouch.bind(this);
     this.onPaste = this.onPaste.bind(this);
     this.setPositionToIndex = this.setPositionToIndex.bind(this);
 
@@ -133,6 +135,7 @@ example yaml:
 
     // Get first key at first level of doc
     this.state.pos = [];
+    this.touch_start = {x: 0, y: 0};
   }
 
   selectSlice(k) {
@@ -154,13 +157,26 @@ example yaml:
     });
   }
 
-  moveCamera(e) {
+  moveCameraScroll(e) {
     const delta = Math.max(e.deltaY, Math.sign(e.deltaY)*110);
     this.setState({
       z_offset: Math.max( Math.min((this.state.z_offset + delta), window.innerWidth), 0)
     });
   }
 
+  handleStartTouch(e) {
+    this.touch_start = {
+      x: e.touches[0].pageX,
+      y: e.touches[0].pageY
+    };
+  }
+
+  moveCameraTouch(e) {
+    const delta = e.touches[0].pageY - this.touch_start.y;
+    this.setState({
+      z_offset: Math.max( Math.min((this.state.z_offset + delta), window.innerWidth), 0)
+    });
+  }
 
   onPaste(e) {
     this.setState({
@@ -205,7 +221,9 @@ example yaml:
   }
 
   componentDidMount() {
-    window.addEventListener("wheel", _.throttle(this.moveCamera, 70));
+    window.addEventListener("wheel", _.throttle(this.moveCameraScroll, 70));
+    window.addEventListener("touchmove", _.throttle(this.moveCameraTouch, 30));
+    window.addEventListener("touchstart", this.handleStartTouch);
   }
 
   render() {
@@ -218,11 +236,17 @@ example yaml:
 
     let data_slices = [];
     const x_partition = window.innerWidth / visible_keys.length;
-    const y_partition = window.innerHeight*.4 / visible_keys.length;
+    const y_partition = window.innerHeight * 0.4 / visible_keys.length;
+    const z_falloff_threshold = 0.0;
     visible_keys.forEach((k, idx) => {
+      let y_offset = 0;
+      let z = -(idx+1) * x_partition + this.state.z_offset;
+      if (z > z_falloff_threshold * window.innerWidth) {
+        y_offset = z - z_falloff_threshold * window.innerWidth;
+      }
       const translation = {
         x: window.innerWidth * 0.5,
-        y: window.innerHeight * 0.6 - idx * y_partition,
+        y: window.innerHeight * 0.6 - idx * y_partition + y_offset,
         z: -(idx+1) * x_partition + this.state.z_offset
       };
       data_slices.push(
