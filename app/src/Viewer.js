@@ -3,14 +3,24 @@ import DataSlice from './DataSlice.js';
 import yaml from 'js-yaml';
 import _ from 'lodash';
 
+function hasClass(element, className) {
+  do {
+    if (element.classList && element.classList.contains(className)) {
+      return true;
+    }
+    element = element.parentNode;
+  } while (element);
+  return false;
+}
+
 export class Viewer extends React.Component {
   constructor(props) {
     super(props);
     this.selectSlice = this.selectSlice.bind(this);
-    this.handleKeyRemoval = this.handleKeyRemoval.bind(this);
     this.moveCameraScroll = this.moveCameraScroll.bind(this);
     this.handleStartTouch = this.handleStartTouch.bind(this);
     this.moveCameraTouch = this.moveCameraTouch.bind(this);
+    this.setZOffset = this.setZOffset.bind(this);
     this.onPaste = this.onPaste.bind(this);
     this.setPositionToIndex = this.setPositionToIndex.bind(this);
 
@@ -18,8 +28,18 @@ export class Viewer extends React.Component {
     const example_yaml = `
 ---
 what do?:
-- Paste YAML from your clipboard to anywhere in the browser window
-- Browse parsed structure with mouse
+  Purpose:
+    Browse YAML and JSON in 3D
+  How to Use:
+    - Paste YAML or JSON from your clipboard to anywhere in the browser window
+  Controls:
+    keyboard:
+    - Left/Right Arrow Keys to navigate document nodes
+    - Enter/Escape to (de)select nodes
+    - Double enter/escape to drill up or down
+    mouse:
+    - Scroll to navigate document nodes
+    - Left click === Enter
 notes:
 - Desktop only for now!
 about:
@@ -130,7 +150,10 @@ example yaml:
 
     this.state = {
       doc: yaml.safeLoad(example_yaml),
-      z_offset: window.innerWidth/4
+      selected: {
+        idx: 0
+      },
+      z_offset: 0
     };
 
     // Get first key at first level of doc
@@ -138,30 +161,62 @@ example yaml:
     this.touch_start = {x: 0, y: 0};
   }
 
-  selectSlice(k) {
+  selectSlice(k, idx) {
+    if (this.state.selected.idx === idx) {
+      // Selecting an already selected card drills into it
+      this.drillToSlice(k);
+      return;
+    }
     this.setState({
-      pos: this.state.pos.concat([k]),
-      z_offset: window.innerWidth/4
+      selected: {
+        idx: idx
+      },
+      z_offset: -0.75 * this.data_plane_cfg[idx].translation.z
     });
   }
 
-  handleKeyRemoval() {
+  drillToSlice(k) {
+    this.old_idx = undefined;
     this.setState({
-      pos: this.state.pos.slice(0, this.state.pos.length-1)
+      pos: this.state.pos.concat([k]),
+      selected: {
+        idx: 0
+      },
+      z_offset: window.screen.width * 0.1
     });
   }
 
   setPositionToIndex(idx) {
     this.setState({
-      pos: this.state.pos.slice(0, idx)
+      pos: this.state.pos.slice(0, idx),
+      z_offset: window.screen.width * 0.1
     });
+  }
+
+  deselect() {
+    this.old_idx = this.state.selected.idx;
+    this.setState({
+      selected: {
+        idx: undefined
+      }
+    });
+  }
+
+  setZOffset(z_offset, e) {
+    if (! (hasClass(e.srcElement, "data-plane") && this.state.selected.idx !== undefined)) {
+      const new_state = {
+        z_offset: z_offset
+      };
+      if (this.state.selected.idx !== undefined) {
+        this.deselect();
+      }
+      this.setState(new_state);
+    }
   }
 
   moveCameraScroll(e) {
     const delta = Math.max(e.deltaY, Math.sign(e.deltaY)*110);
-    this.setState({
-      z_offset: Math.max( Math.min((this.state.z_offset + delta), window.innerWidth), 0)
-    });
+    this.setZOffset(Math.max( Math.min((this.state.z_offset + delta), window.innerWidth), 0), e)
   }
 
   handleStartTouch(e) {
@@ -173,9 +228,7 @@ example yaml:
 
   moveCameraTouch(e) {
     const delta = e.touches[0].pageY - this.touch_start.y;
-    this.setState({
-      z_offset: Math.max( Math.min((this.state.z_offset + delta), window.innerWidth), 0)
-    });
+    this.setZOffset(Math.max( Math.min((this.state.z_offset + delta), window.innerWidth), 0), e);
   }
 
   onPaste(e) {
@@ -221,9 +274,52 @@ example yaml:
   }
 
   componentDidMount() {
+    document.getElementsByClassName("backdrop")[0].addEventListener("click", (e) => {
+      this.deselect();
+    });
     window.addEventListener("wheel", _.throttle(this.moveCameraScroll, 70));
     window.addEventListener("touchmove", _.throttle(this.moveCameraTouch, 30));
     window.addEventListener("touchstart", this.handleStartTouch);
+    window.addEventListener("keydown", (e) => {
+      if (this.state.selected.idx !== undefined) {
+        switch (e.key) {
+          case "Enter":
+            const new_key = this.data_plane_cfg[this.state.selected.idx].key
+            const has_children = typeof this.sub_doc[ new_key ] == "object"
+            if (has_children) {
+              this.drillToSlice(new_key);
+            }
+            break;
+          case "Escape":
+            this.deselect()
+            break;
+          case "ArrowLeft":
+            if (this.state.selected.idx > 0) {
+              const new_idx = Math.max(this.state.selected.idx - 1, 0);
+              this.selectSlice(this.data_plane_cfg[new_idx].key, new_idx);
+            }
+            break;
+          case "ArrowRight":
+            if (this.state.selected.idx < Object.keys(this.sub_doc).length - 1) {
+              const new_idx = Math.min(this.state.selected.idx + 1, Object.keys(this.sub_doc).length - 1);
+              this.selectSlice(this.data_plane_cfg[new_idx].key, new_idx);
+            }
+            break;
+        }
+      } else {
+          switch (e.key) {
+            case "Escape":
+              this.setPositionToIndex(this.state.pos.length - 1);
+              break;
+            case "Enter":
+            case "ArrowLeft":
+            case "ArrowRight":
+              const new_idx = this.old_idx ? this.old_idx : 0;
+              this.selectSlice(this.data_plane_cfg[new_idx].key, new_idx);
+              break;
+        }
+      }
+    });
   }
 
   render() {
@@ -231,29 +327,52 @@ example yaml:
     for (const key of this.state.pos) {
       sub_doc = sub_doc[key];
     }
+    this.sub_doc = sub_doc
 
     const visible_keys = Object.keys(sub_doc);
 
-    let data_slices = [];
-    const x_partition = window.innerWidth / visible_keys.length;
-    const y_partition = window.innerHeight * 0.4 / visible_keys.length;
+    // Generate config: 3D math, select states, etc.
+    const x_partition = window.screen.width / visible_keys.length;
+    const y_partition = window.screen.height * 0.3 / visible_keys.length;
     const z_falloff_threshold = 0.0;
+    const data_plane_cfg = [];
+    let data_slices = [];
     visible_keys.forEach((k, idx) => {
       let y_offset = 0;
-      let z = -(idx+1) * x_partition + this.state.z_offset;
-      if (z > z_falloff_threshold * window.innerWidth) {
-        y_offset = z - z_falloff_threshold * window.innerWidth;
-      }
       const translation = {
         x: window.innerWidth * 0.5,
-        y: window.innerHeight * 0.6 - idx * y_partition + y_offset,
-        z: -(idx+1) * x_partition + this.state.z_offset
+        y: 0,
+        z: -(idx+1) * x_partition,
+        z_offset: this.state.z_offset
       };
+      const isMinimized = this.state.selected.idx !== undefined && this.state.selected.idx !== idx;
+      const isSelected =  this.state.selected.idx === idx;
+      if (!isMinimized && !isSelected) {
+        translation.y += window.screen.height * 0.3 - idx * y_partition;
+        let z = translation.z + translation.z_offset;
+        if (z > z_falloff_threshold * window.screen.width) {
+          translation.y += z - z_falloff_threshold * window.screen.width;
+        }
+      }
+      data_plane_cfg.push({
+        key: k,
+        idx: idx,
+        selected: isSelected,
+        minimized: isMinimized,
+        translation: translation
+      });
+    });
+
+    this.data_plane_cfg = data_plane_cfg;
+
+    // Render data planes
+    data_plane_cfg.forEach((cfg) => {
       data_slices.push(
-        <DataSlice key={k} translation={translation} sub_doc_key={k} sub_doc={sub_doc[k]} selectSlice={this.selectSlice} />
+        <DataSlice key={cfg.key} key_idx={cfg.idx} selected={cfg.selected} minimized={cfg.minimized} translation={cfg.translation} sub_doc_key={cfg.key} sub_doc={sub_doc[cfg.key]} selectSlice={this.selectSlice} />
       )
     });
 
+    // Render nav bar
     let position_nodes = []
     this.state.pos.forEach((k, idx) => {
       position_nodes.push(
@@ -263,8 +382,13 @@ example yaml:
       );
     });
 
+    const scene_styles = {
+      transform: `rotateY(-45deg) translateY(12em) translateX(-50%)`,
+    };
+
     return (
       <div className="viewer" onPaste={(e) => this.onPaste(e)}>
+        <div className="backdrop"></div>
         <div className="navbar">
           <div className="nav-node" onClick={() => this.setPositionToIndex(0)}>
             Keys >
@@ -272,7 +396,7 @@ example yaml:
           {position_nodes}
         </div>
         <div className="canvas">
-          <div className="scene">
+          <div className="scene" style={scene_styles}>
             {data_slices}
           </div>
         </div>
