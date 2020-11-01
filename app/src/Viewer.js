@@ -263,13 +263,16 @@ example yaml:
         "error": "Oh no! That didn't work for some reason.",
       };
       if (exception !== false) {
-        console.log(exception);
         new_doc.exception = exception;
       }
     }
+    this.old_idx = undefined;
     this.setState({
       doc: new_doc,
-      z_offset: Object.keys(new_doc).length > 1 ? window.innerWidth/4 : window.innerWidth
+      z_offset: window.screen.width * 0.1,
+      selected: {
+        idx: undefined
+      }
     });
   }
 
