@@ -24,6 +24,16 @@ export class Viewer extends React.Component {
     window.addEventListener("keydown", this.handleKeydown);
   }
 
+  componentWillUnmount() {
+    document.getElementsByClassName("backdrop")[0].removeEventListener("click", (e) => {
+      this.deselect();
+    });
+    window.removeEventListener("wheel", this.moveCameraScroll);
+    window.removeEventListener("touchmove", _.throttle(this.moveCameraTouch, 30));
+    window.removeEventListener("touchstart", this.handleStartTouch);
+    window.removeEventListener("keydown", this.handleKeydown);
+  }
+
   constructor(props) {
     super(props);
     this.selectSlice = this.selectSlice.bind(this);
@@ -34,7 +44,6 @@ export class Viewer extends React.Component {
     this.setZOffset = this.setZOffset.bind(this);
     this.onPaste = this.onPaste.bind(this);
     this.setPositionToIndex = this.setPositionToIndex.bind(this);
-
 
     const example_yaml = `
 ---
@@ -48,7 +57,7 @@ what do?:
     - Left/Right Arrow Keys to navigate document nodes
     - Enter Key will view open node in detail view
     - Enter Key a second time will drill down into that node if it has children
-    - Similarly, Escape Key can be used to travel upwards
+    - Escape Key can be used to travel upwards
     Mouse:
     - Scroll to navigate document nodes
     - Left click === Enter
@@ -248,28 +257,38 @@ example yaml:
   }
 
   moveCameraScroll(e) {
+    console.log("were getting to moveCamera");
     const update_period = 50;
-    const max_velocity = window.screen.width / this.data_plane_cfg.length;
+    // const max_velocity = window.screen.width / this.data_plane_cfg.length;
     let direction = Math.sign(e.deltaY);
-    if (this.scroll_active) {
-      this.current_scroll_velocity += direction * max_velocity * 0.2;
+    if (this.scroll_timer) {
+      console.log("there is a timer already!");
+      this.current_scroll_velocity += direction * 10;
       this.current_scroll_velocity = Math.max(-150, Math.min(150, this.current_scroll_velocity));
     } else {
+      console.log("making timer!");
       this.scroll_active = true;
       this.current_scroll_velocity = 0;
+      this.last_scroll_velocity = 0;
       this.scroll_timer = setInterval(() => {
         const now = new Date().getTime();
-        this.setZOffset(Math.max( Math.min((this.state.z_offset + this.current_scroll_velocity), window.innerWidth), 0), e)
         if (now - this.last_scroll > update_period) {
-          this.current_scroll_velocity /= 2;
+          this.current_scroll_velocity /= this.last_scroll_velocity * Math.exp(0.2 * (now - this.last_scroll));
+          if (isNaN(this.current_scroll_velocity)) {
+            this.current_scroll_velocity = direction * 150;
+          }
           if (Math.abs(this.current_scroll_velocity) < 1) {
             this.current_scroll_velocity = 0;
             this.scroll_active = false;
+            console.log("clearing timer!");
             clearInterval(this.scroll_timer);
+            this.scroll_timer = undefined;
           }
         }
+        this.setZOffset(Math.max( Math.min((this.state.z_offset + this.current_scroll_velocity), window.innerWidth), 0), e)
       }, update_period);
     }
+    this.last_scroll_velocity = this.current_scroll_velocity;
     this.last_scroll = new Date().getTime();
   }
 
@@ -345,7 +364,7 @@ example yaml:
   }
 
   setZOffset(z_offset, e) {
-    if (! (hasClass(e.srcElement, "data-plane") && this.state.selected.idx !== undefined)) {
+    if (! (hasClass(e.srcElement, "data-plane") || this.state.selected.idx !== undefined)) {
       const new_state = {
         z_offset: z_offset
       };
@@ -355,8 +374,6 @@ example yaml:
       this.setState(new_state);
     }
   }
-
-
 
   render() {
     let sub_doc = this.state.doc;
@@ -387,7 +404,7 @@ example yaml:
         translation.y += window.screen.height * 0.3 - idx * y_partition;
         let z = translation.z + translation.z_offset;
         if (z > z_falloff_threshold * window.screen.width) {
-          translation.y += z - z_falloff_threshold * window.screen.width;
+          translation.y += (translation.z_offset / window.screen.width) * window.screen.height * 0.5;
         }
       }
       data_plane_cfg.push({
@@ -419,7 +436,7 @@ example yaml:
     });
 
     const scene_styles = {
-      transform: `rotateY(-45deg) translateY(12em) translateX(-50%)`,
+      transform: `rotateY(-45deg) translateY(8em) translateX(-50%)`,
     };
 
     return (

@@ -1,4 +1,4 @@
-import { synthwave84 } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { materialOceanic } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import React from 'react';
 import yaml from 'js-yaml';
@@ -42,7 +42,7 @@ export class DataSlice extends React.Component {
       className += " selected";
     }
     if (this.props.minimized) {
-      styles.transform += ` translateX(-${window.screen.width * 0.5}px) translateZ(-${window.screen.width * 0.5}px) translateY(${window.screen.height*0.5}px)`;
+      styles.transform += ` translateX(-${window.screen.width * 0.5}px) translateZ(-${window.screen.width * 0.5}px) translateY(${window.screen.height*0.75}px)`;
     }
     return (
       <div className={className} onClick={onClick} style={styles}>
@@ -54,7 +54,7 @@ export class DataSlice extends React.Component {
         </div>
         <div className="data-plane-value">
           <div className="data-plane-value-scroll-container" style={{maxHeight: `calc(${window.screen.height * 0.6}px - 2em)`}}>
-            <SyntaxHighlighter language="yaml" style={synthwave84} >
+            <SyntaxHighlighter language="yaml" style={materialOceanic} >
               {yaml.safeDump(this.props.sub_doc)}
             </SyntaxHighlighter>
           </div>
