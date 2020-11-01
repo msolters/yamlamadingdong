@@ -14,10 +14,21 @@ function hasClass(element, className) {
 }
 
 export class Viewer extends React.Component {
+  componentDidMount() {
+    document.getElementsByClassName("backdrop")[0].addEventListener("click", (e) => {
+      this.deselect();
+    });
+    window.addEventListener("wheel", this.moveCameraScroll);
+    window.addEventListener("touchmove", _.throttle(this.moveCameraTouch, 30));
+    window.addEventListener("touchstart", this.handleStartTouch);
+    window.addEventListener("keydown", this.handleKeydown);
+  }
+
   constructor(props) {
     super(props);
     this.selectSlice = this.selectSlice.bind(this);
     this.moveCameraScroll = this.moveCameraScroll.bind(this);
+    this.handleKeydown = this.handleKeydown.bind(this);
     this.handleStartTouch = this.handleStartTouch.bind(this);
     this.moveCameraTouch = this.moveCameraTouch.bind(this);
     this.setZOffset = this.setZOffset.bind(this);
@@ -158,20 +169,19 @@ example yaml:
 
     // Get first key at first level of doc
     this.state.pos = [];
+
     this.touch_start = {x: 0, y: 0};
+    this.current_scroll_velocity = 0;
+    this.scroll_active = false;
+    this.last_scroll = new Date().getTime();
   }
 
-  selectSlice(k, idx) {
-    if (this.state.selected.idx === idx) {
-      // Selecting an already selected card drills into it
-      this.drillToSlice(k);
-      return;
-    }
+  deselect() {
+    this.old_idx = this.state.selected.idx;
     this.setState({
       selected: {
-        idx: idx
-      },
-      z_offset: -0.75 * this.data_plane_cfg[idx].translation.z
+        idx: undefined
+      }
     });
   }
 
@@ -186,37 +196,45 @@ example yaml:
     });
   }
 
-  setPositionToIndex(idx) {
-    this.setState({
-      pos: this.state.pos.slice(0, idx),
-      z_offset: window.screen.width * 0.1
-    });
-  }
-
-  deselect() {
-    this.old_idx = this.state.selected.idx;
-    this.setState({
-      selected: {
-        idx: undefined
+  handleKeydown(e) {
+    if (this.state.selected.idx !== undefined) {
+      switch (e.key) {
+        case "ArrowLeft":
+          if (this.state.selected.idx > 0) {
+            const new_idx = Math.max(this.state.selected.idx - 1, 0);
+            this.selectSlice(this.data_plane_cfg[new_idx].key, new_idx);
+          }
+          break;
+        case "ArrowRight":
+          if (this.state.selected.idx < Object.keys(this.sub_doc).length - 1) {
+            const new_idx = Math.min(this.state.selected.idx + 1, Object.keys(this.sub_doc).length - 1);
+            this.selectSlice(this.data_plane_cfg[new_idx].key, new_idx);
+          }
+          break;
+        case "Enter":
+          const new_key = this.data_plane_cfg[this.state.selected.idx].key;
+          const has_children = typeof this.sub_doc[ new_key ] == "object";
+          if (has_children) {
+            this.drillToSlice(new_key);
+          }
+          break;
+        case "Escape":
+          this.deselect()
+          break;
       }
-    });
-  }
-
-  setZOffset(z_offset, e) {
-    if (! (hasClass(e.srcElement, "data-plane") && this.state.selected.idx !== undefined)) {
-      const new_state = {
-        z_offset: z_offset
-      };
-      if (this.state.selected.idx !== undefined) {
-        this.deselect();
+    } else {
+        switch (e.key) {
+          case "ArrowLeft":
+          case "ArrowRight":
+          case "Enter":
+            const new_idx = this.old_idx ? this.old_idx : 0;
+            this.selectSlice(this.data_plane_cfg[new_idx].key, new_idx);
+            break;
+          case "Escape":
+            this.setPositionToIndex(this.state.pos.length - 1);
+            break;
       }
-      this.setState(new_state);
     }
-  }
-
-  moveCameraScroll(e) {
-    const delta = Math.max(e.deltaY, Math.sign(e.deltaY)*110);
-    this.setZOffset(Math.max( Math.min((this.state.z_offset + delta), window.innerWidth), 0), e)
   }
 
   handleStartTouch(e) {
@@ -224,6 +242,32 @@ example yaml:
       x: e.touches[0].pageX,
       y: e.touches[0].pageY
     };
+  }
+
+  moveCameraScroll(e) {
+    const update_period = 50;
+    const max_velocity = window.screen.width / this.data_plane_cfg.length;
+    let direction = Math.sign(e.deltaY);
+    if (this.scroll_active) {
+      this.current_scroll_velocity += direction * max_velocity * 0.2;
+      this.current_scroll_velocity = Math.max(-150, Math.min(150, this.current_scroll_velocity));
+    } else {
+      this.scroll_active = true;
+      this.current_scroll_velocity = 0;
+      this.scroll_timer = setInterval(() => {
+        const now = new Date().getTime();
+        this.setZOffset(Math.max( Math.min((this.state.z_offset + this.current_scroll_velocity), window.innerWidth), 0), e)
+        if (now - this.last_scroll > update_period) {
+          this.current_scroll_velocity /= 2;
+          if (Math.abs(this.current_scroll_velocity) < 1) {
+            this.current_scroll_velocity = 0;
+            this.scroll_active = false;
+            clearInterval(this.scroll_timer);
+          }
+        }
+      }, update_period);
+    }
+    this.last_scroll = new Date().getTime();
   }
 
   moveCameraTouch(e) {
@@ -276,54 +320,40 @@ example yaml:
     });
   }
 
-  componentDidMount() {
-    document.getElementsByClassName("backdrop")[0].addEventListener("click", (e) => {
-      this.deselect();
-    });
-    window.addEventListener("wheel", _.throttle(this.moveCameraScroll, 70));
-    window.addEventListener("touchmove", _.throttle(this.moveCameraTouch, 30));
-    window.addEventListener("touchstart", this.handleStartTouch);
-    window.addEventListener("keydown", (e) => {
-      if (this.state.selected.idx !== undefined) {
-        switch (e.key) {
-          case "Enter":
-            const new_key = this.data_plane_cfg[this.state.selected.idx].key
-            const has_children = typeof this.sub_doc[ new_key ] == "object"
-            if (has_children) {
-              this.drillToSlice(new_key);
-            }
-            break;
-          case "Escape":
-            this.deselect()
-            break;
-          case "ArrowLeft":
-            if (this.state.selected.idx > 0) {
-              const new_idx = Math.max(this.state.selected.idx - 1, 0);
-              this.selectSlice(this.data_plane_cfg[new_idx].key, new_idx);
-            }
-            break;
-          case "ArrowRight":
-            if (this.state.selected.idx < Object.keys(this.sub_doc).length - 1) {
-              const new_idx = Math.min(this.state.selected.idx + 1, Object.keys(this.sub_doc).length - 1);
-              this.selectSlice(this.data_plane_cfg[new_idx].key, new_idx);
-            }
-            break;
-        }
-      } else {
-          switch (e.key) {
-            case "Escape":
-              this.setPositionToIndex(this.state.pos.length - 1);
-              break;
-            case "Enter":
-            case "ArrowLeft":
-            case "ArrowRight":
-              const new_idx = this.old_idx ? this.old_idx : 0;
-              this.selectSlice(this.data_plane_cfg[new_idx].key, new_idx);
-              break;
-        }
-      }
+  selectSlice(k, idx) {
+    if (this.state.selected.idx === idx) {
+      // Selecting an already selected card drills into it
+      this.drillToSlice(k);
+      return;
+    }
+    this.setState({
+      selected: {
+        idx: idx
+      },
+      z_offset: -0.75 * this.data_plane_cfg[idx].translation.z
     });
   }
+
+  setPositionToIndex(idx) {
+    this.setState({
+      pos: this.state.pos.slice(0, idx),
+      z_offset: window.screen.width * 0.1
+    });
+  }
+
+  setZOffset(z_offset, e) {
+    if (! (hasClass(e.srcElement, "data-plane") && this.state.selected.idx !== undefined)) {
+      const new_state = {
+        z_offset: z_offset
+      };
+      if (this.state.selected.idx !== undefined) {
+        this.deselect();
+      }
+      this.setState(new_state);
+    }
+  }
+
+
 
   render() {
     let sub_doc = this.state.doc;
