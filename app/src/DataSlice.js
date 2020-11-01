@@ -42,7 +42,7 @@ export class DataSlice extends React.Component {
       className += " selected";
     }
     if (this.props.minimized) {
-      styles.transform += ` translateX(-${window.screen.width * 0.5}px) translateZ(-${window.screen.width * 0.5}px) translateY(${window.screen.width*0.5}px)`;
+      styles.transform += ` translateX(-${window.screen.width * 0.5}px) translateZ(-${window.screen.width * 0.5}px) translateY(${window.screen.height*0.5}px)`;
     }
     return (
       <div className={className} onClick={onClick} style={styles}>
