@@ -43,16 +43,19 @@ what do?:
     Browse YAML and JSON in 3D
   How to Use:
     - Paste YAML or JSON from your clipboard to anywhere in the browser window
-  Controls:
-    keyboard:
+  Navigation Controls:
+    Keyboard:
     - Left/Right Arrow Keys to navigate document nodes
-    - Enter/Escape to (de)select nodes
-    - Double enter/escape to drill up or down
-    mouse:
+    - Enter Key will view open node in detail view
+    - Enter Key a second time will drill down into that node if it has children
+    - Similarly, Escape Key can be used to travel upwards
+    Mouse:
     - Scroll to navigate document nodes
     - Left click === Enter
+    - Clicking on the background will deselect a node
+    - Top navbar on can be used to travel upwards
 notes:
-- Desktop only for now!
+- (Mostly) desktop only for now!
 about:
   name: YAMLAMADINGDONG v420
   author: Saltine
